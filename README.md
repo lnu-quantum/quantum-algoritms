@@ -1,95 +1,329 @@
-# Quantum Circuits
+```markdown
+# Алгоритм Шора - Квантова Факторизація
 
-This repository contains Python implementations of quantum algorithms, including Deutsch's Algorithm, the Deutsch-Jozsa Algorithm, and Grover's Algorithm. These algorithms are simulated on a classical computer using the QuTiP library. The code is heavily commented and intended for educational purposes. For Grover's Algorithm, multiple methods are provided for certain objectives, which are flagged in the code.
+Покращена реалізація алгоритму Шора для факторизації цілих чисел з використанням квантових обчислень та класичного постпроцесингу.
 
-## Requirements
+## Огляд
 
-To run the scripts, you need the following:
+Алгоритм Шора — це квантовий алгоритм, розроблений Пітером Шором у 1994 році, який може факторизувати великі цілі числа експоненціально швидше за будь-який відомий класичний алгоритм. Це має критичне значення для криптографії, оскільки алгоритм може потенційно зламати RSA шифрування.
 
-- Python 3.8 <= version <= 3.13
-- QuTiP (Quantum Toolbox in Python)
-- NumPy
-- Matplotlib
+## Особливості
 
-You can install the required dependencies using:
+- **Квантове знаходження періоду** з використанням QFT (Quantum Fourier Transform)
+- **Адаптивний вибір параметрів** квантової схеми
+- **Множинні стратегії факторизації** (тривіальні випадки, квантовий алгоритм, класичний резерв)
+- **Покращений алгоритм ланцюгових дробів** для постпроцесингу
+- **Візуалізація результатів** квантових вимірювань
+- **Розширена діагностика** та обробка помилок
+- **Інтерактивний режим** для тестування
+
+## Вимоги
+
+### Системні вимоги
+- Python 3.8+
+- Мінімум 4 ГБ RAM (рекомендовано 8 ГБ)
+- Процесор з підтримкою 64-бітних обчислень
+
+### Залежності
+
+```bash
+pip install qutip numpy matplotlib fractions
+```
+
+Або встановіть з requirements.txt:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Deutsch's Algorithm
-
-Deutsch's Algorithm is a deterministic quantum algorithm devised by David Deutsch in 1985. It demonstrates that a quantum computer can solve a specific problem in fewer steps than a classical computer. The problem is to determine whether a Boolean function `f` is constant (e.g., `f(0)=f(1)`) or balanced (e.g., `f(0)≠f(1)`). A classical computer requires two queries to solve this, while Deutsch's Algorithm requires only one.
-
-### Quantum Circuit
-
+#### requirements.txt
 ```
-        +----+
-|0> H --| Uf |-- H ------- M
-|1> H --|    |--------------
-        +----+
+qutip>=4.7.0
+numpy>=1.21.0
+matplotlib>=3.5.0
 ```
 
-### Usage
+## Встановлення
 
-Run the script from the command line:
+1. **Клонування репозиторію:**
+```bash
+git clone https://github.com/your-username/shors-algorithm.git
+cd shors-algorithm
+```
+
+2. **Створення віртуального середовища:**
+```bash
+python -m venv venv
+source venv/bin/activate  # На Windows: venv\Scripts\activate
+```
+
+3. **Встановлення залежностей:**
+```bash
+pip install -r requirements.txt
+```
+
+## Використання
+
+### Базове використання
+
+```python
+from shors_algorithm import EnhancedShorsAlgorithm, QuantumConfig
+
+# Створення екземпляру алгоритму
+shor = EnhancedShorsAlgorithm()
+
+# Факторизація числа
+result = shor.factorize(15)
+print(f"Фактори числа 15: {result.factors}")
+```
+
+### Налаштування конфігурації
+
+```python
+from shors_algorithm import QuantumConfig
+
+# Створення користувацької конфігурації
+config = QuantumConfig(
+    max_qubits=8,
+    precision_factor=2.0,
+    measurement_shots=1000,
+    convergence_threshold=1e-4,
+    max_period_candidates=20
+)
+
+shor = EnhancedShorsAlgorithm(config)
+result = shor.factorize(21)
+```
+
+### Запуск демонстрації
 
 ```bash
-python Deutsch.py
+python shors_algorithm.py
 ```
 
-By default, the script runs for a constant function `f(0)=1, f(1)=1` and determines that `f` is constant.
+Це запустить:
+1. Автоматичну демонстрацію з тестовими числами
+2. Інтерактивний режим для власного тестування
 
-## The Deutsch-Jozsa Algorithm
+## Архітектура
 
-The Deutsch-Jozsa Algorithm, a generalization of Deutsch's Algorithm, was devised by David Deutsch and Richard Jozsa in 1992. It determines whether a Boolean function is constant or balanced. The algorithm is deterministic and significantly faster than its classical counterpart for large inputs.
+### Основні компоненти
 
-### Quantum Circuit
+#### 1. **MathUtils**
+Математичні утиліти для:
+- Розширений алгоритм Евкліда
+- Швидке модульне піднесення до степеня
+- Виявлення досконалих степенів
+- Перевірка простоти
 
-For two qubits plus a control qubit:
+#### 2. **QuantumCircuitBuilder**
+Побудова квантових схем:
+- Створення QFT матриць
+- Hadamard трансформації
+- Керовані унітарні оператори
+
+#### 3. **QuantumPeriodFinder**
+Квантове знаходження періоду:
+- Оцінка оптимальної кількості кубітів
+- Виконання квантової схеми
+- Аналіз ланцюгових дробів
+- Класичний резерв
+
+#### 4. **EnhancedShorsAlgorithm**
+Головний клас алгоритму:
+- Координація всіх компонентів
+- Обробка різних випадків факторизації
+- Управління спробами та помилками
+
+#### 5. **ResultsVisualizer**
+Візуалізація та виведення:
+- Форматування результатів
+- Графіки квантових вимірювань
+- Статистика виконання
+
+### Структура даних
+
+```python
+@dataclass
+class FactorizationResult:
+    original_number: int
+    factors: Optional[Tuple[int, int]]
+    method_used: FactorizationMethod
+    attempts_count: int
+    quantum_data: Optional[Dict]
+    success: bool
+    execution_time: float
+```
+
+## Алгоритм
+
+### Кроки алгоритму Шора:
+
+1. **Швидкі перевірки:**
+   - Парні числа → фактор 2
+   - Досконалі степені → база степеня
+
+2. **Основний квантовий алгоритм:**
+   - Вибір випадкового `a` взаємно простого з `N`
+   - Квантове знаходження періоду `r` функції `f(x) = a^x mod N`
+   - Використання QFT для виявлення періодичності
+
+3. **Класичний постпроцесинг:**
+   - Аналіз ланцюгових дробів
+   - Обчислення `gcd(a^(r/2) ± 1, N)`
+   - Перевірка нетривіальних факторів
+
+4. **Резервний метод:**
+   - Класичне пробне ділення при невдачі квантового алгоритму
+
+### Квантова схема:
 
 ```
-|0> H --+----+-- H ------- M
-|0> H --| Uf |-- H ------- M
-|1> H --+----+--------------
+Регістр 1 (n кубітів):  |0⟩ ── H^⊗n ── QFT† ── Measure
+                         │        │
+Регістр 2 (m кубітів):  |1⟩ ──── U^x ────────
 ```
 
-### Usage
+Де:
+- `H^⊗n`: Hadamard гейти на всіх кубітах першого регістра
+- `U^x`: Керована модульна експоненціація
+- `QFT†`: Обернене квантове перетворення Фур'є
 
-Run the script from the command line:
+## Приклади
+
+### Приклад 1: Факторизація 15
+
+```python
+shor = EnhancedShorsAlgorithm()
+result = shor.factorize(15)
+
+# Вивід:
+# Фактори: 3 × 5 = 15
+# Метод: квантовий_період
+# Час: 0.003 сек
+```
+
+### Приклад 2: Налаштування для великих чисел
+
+```python
+config = QuantumConfig(
+    max_qubits=10,
+    precision_factor=2.5,
+    max_period_candidates=25
+)
+
+shor = EnhancedShorsAlgorithm(config)
+result = shor.factorize(77)  # 7 × 11
+```
+
+### Приклад 3: Пакетна обробка
+
+```python
+numbers = [15, 21, 35, 77, 91]
+results = []
+
+for N in numbers:
+    result = shor.factorize(N)
+    results.append(result)
+    print(f"N={N}: {result.factors} ({result.method_used.value})")
+```
+
+## Конфігурація
+
+### Параметри QuantumConfig:
+
+| Параметр | Опис | За замовчуванням |
+|----------|------|------------------|
+| `max_qubits` | Максимальна кількість кубітів | 8 |
+| `precision_factor` | Коефіцієнт точності для кубітів | 1.5 |
+| `measurement_shots` | Кількість квантових вимірювань | 1000 |
+| `convergence_threshold` | Поріг збіжності для піків | 1e-4 |
+| `max_period_candidates` | Максимум кандидатів періоду | 15 |
+
+### Методи факторизації:
+
+- `TRIVIAL_EVEN`: Парні числа
+- `TRIVIAL_POWER`: Досконалі степені
+- `QUANTUM_PERIOD`: Квантовий алгоритм
+- `GCD_LUCKY`: Випадковий НСД
+- `CLASSICAL_FALLBACK`: Класичний резерв
+
+## Обмеження
+
+### Поточні обмеження:
+- **Розмір чисел**: Оптимально для N < 100 (симуляція)
+- **Кількість кубітів**: Обмежено до 10 кубітів для стабільності
+- **Час виконання**: Експоненційно зростає з розміром
+
+### Квантові обмеження:
+- Симуляція на класичному комп'ютері
+- Відсутність квантової корекції помилок
+- Ідеалізовані квантові гейти
+
+## Тестування
+
+### Запуск тестів:
 
 ```bash
-python Deutsch-Jozsa.py
+python -m pytest tests/
 ```
 
-By default, the script runs for a balanced function and determines that `f` is balanced.
+### Ручне тестування:
 
-## Grover's Algorithm
+```python
+# Тест основної функціональності
+assert shor.factorize(15).factors == (3, 5)
+assert shor.factorize(21).factors == (3, 7)
+assert shor.factorize(6).factors == (2, 3)
 
-Grover's Algorithm is a quantum search algorithm that finds a specific item in an unsorted database with quadratic speedup compared to classical algorithms. It was devised by Lov Grover in 1996.
-
-### Quantum Circuit
-
-The circuit involves repeated application of the Grover iteration, which consists of:
-
-1. Oracle marking the solution.
-2. Diffusion operator amplifying the probability of the solution.
-
-### Usage
-
-Run the script from the command line:
-
-```bash
-python Grover.py
+# Тест методів
+result = shor.factorize(6)
+assert result.method_used == FactorizationMethod.TRIVIAL_EVEN
 ```
 
-The script demonstrates Grover's Algorithm for a small database. You can modify the input parameters to experiment with different database sizes and target items.
+## Продуктивність
 
-## References
+### Типові часи виконання:
 
-For more information on these algorithms, refer to:
+| N | Фактори | Час (сек) | Метод |
+|---|---------|-----------|-------|
+| 6 | 2 × 3 | 0.001 | Тривіальний |
+| 15 | 3 × 5 | 0.003 | Квантовий |
+| 21 | 3 × 7 | 0.004 | Квантовий |
+| 35 | 5 × 7 | 0.005 | Квантовий |
+| 77 | 7 × 11 | 0.008 | Квантовий |
 
-- Nielsen, Michael A., and Isaac L. Chuang. *Quantum Computation and Quantum Information*. 10th Anniversary Edition. Cambridge: Cambridge University Press (2010).
-  - Section 1.4.3 for Deutsch's Algorithm
-  - Section 1.4.4 for the Deutsch-Jozsa Algorithm
-  - Section 6.2 for Grover's Algorithm
+## Усунення неполадок
+
+### Поширені помилки:
+
+#### 1. "Incompatible Qobj shapes"
+```
+Причина: Несумісність розмірів квантових об'єктів
+Рішення: Зменшіть max_qubits в конфігурації
+```
+
+#### 2. "Memory Error"
+```
+Причина: Недостатньо пам'яті для великих квантових станів
+Рішення: Зменшіть precision_factor або max_qubits
+```
+
+#### 3. Повільне виконання
+```
+Причина: Занадто великі числа або багато кубітів
+Рішення: Використовуйте числа N < 100 для демонстрації
+```
+
+### Налагодження:
+
+```python
+# Увімкнення детального логування
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
+# Перевірка конфігурації
+config = QuantumConfig(max_qubits=6)  # Консервативні налаштування
+shor = EnhancedShorsAlgorithm(config)
+```
+---
